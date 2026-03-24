@@ -1,0 +1,29 @@
+{
+  "name": "@sharkord/plugin-builder",
+  "version": "0.1.0",
+  "description": "CLI to build Sharkord plugins",
+  "module": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "type": "module",
+  "bin": {
+    "@sharkord/plugin-builder": "bin/sharkord-plugin-builder"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "zod": "^4.3.6"
+  }
+}
