@@ -5,8 +5,14 @@ import path from "path";
 import { patchManifest } from "../helpers/patch-manifest";
 import { archive } from "../helpers/archive";
 import type { TManifest, TPluginVersion } from "../statics";
-import { sha256 } from "../helpers/sha256";
 import { clearDir } from "../helpers/clear-dir";
+import {
+  createPluginVersion,
+  getPluginVersionPath,
+  writePluginVersionFile,
+} from "../helpers/version-file";
+
+const DEFAULT_DOWNLOAD_URL = "ADD_DOWNLOAD_URL_HERE";
 
 type TBuildContext = {
   pluginRootDir: string;
@@ -17,6 +23,7 @@ type TBuildContext = {
 
 type TBuildOptions = {
   pluginRootDir?: string;
+  downloadUrl?: string;
   sdkVersion?: number;
   onAfterBundle?: (context: {
     outDir: string;
@@ -29,7 +36,15 @@ type TBuildOptions = {
   }) => void | Promise<void>;
 };
 
-const build = async (options: TBuildOptions = {}) => {
+type TBuildResult = {
+  archivePath: string;
+  manifest: TManifest;
+  outDir: string;
+  version: TPluginVersion;
+  versionPath: string;
+};
+
+const build = async (options: TBuildOptions = {}): Promise<TBuildResult> => {
   const pluginRootDir = options.pluginRootDir ?? process.cwd();
   const manifestPath = path.resolve(path.join(pluginRootDir, "manifest.json"));
   const packageJsonPath = path.resolve(
@@ -59,7 +74,7 @@ const build = async (options: TBuildOptions = {}) => {
 
   console.log("Patching manifest with correct sdkVersion...");
 
-  await patchManifest({
+  const patchedManifest = await patchManifest({
     manifest,
     sdkVersion: options.sdkVersion ?? 1,
     manifestPath,
@@ -70,7 +85,7 @@ const build = async (options: TBuildOptions = {}) => {
 
   await fs.copyFile(manifestPath, path.join(outDir, "manifest.json"));
 
-  const tarName = `${manifest.id}-${manifest.version}`;
+  const tarName = `${patchedManifest.id}-${patchedManifest.version}`;
 
   console.log(`Creating tarball "${tarName}.tar"...`);
 
@@ -82,22 +97,20 @@ const build = async (options: TBuildOptions = {}) => {
 
   console.log("Creating version file...");
 
-  const version: TPluginVersion = {
-    version: manifest.version,
-    downloadUrl: "ADD_DOWNLOAD_URL_HERE",
-    checksum: await sha256(archivePath),
-    sdkVersion: manifest.sdkVersion,
-    size: (await fs.stat(archivePath)).size,
-  };
+  const version = await createPluginVersion({
+    archivePath,
+    downloadUrl: options.downloadUrl ?? DEFAULT_DOWNLOAD_URL,
+    manifest: patchedManifest,
+  });
 
-  const versionPath = path.resolve(
-    path.join(distDir, `${manifest.version}.json`),
-  );
+  const versionPath = getPluginVersionPath(distDir, version.version);
 
-  await fs.writeFile(versionPath, JSON.stringify(version, null, 2));
+  await writePluginVersionFile({ version, versionPath });
 
   console.log(
-    `Build complete!\nTarball: ${archivePath}\nVersion file: ${versionPath}\nRemember to update the downloadUrl in the version file before publishing!`,
+    options.downloadUrl
+      ? `Build complete!\nTarball: ${archivePath}\nVersion file: ${versionPath}`
+      : `Build complete!\nTarball: ${archivePath}\nVersion file: ${versionPath}\nRemember to update the downloadUrl in the version file before publishing!`,
   );
 
   if (options.onFinish) {
@@ -112,10 +125,12 @@ const build = async (options: TBuildOptions = {}) => {
 
   return {
     archivePath,
+    manifest: patchedManifest,
     versionPath,
     outDir,
+    version,
   };
 };
 
 export { build };
-export type { TBuildContext, TBuildOptions };
+export type { TBuildContext, TBuildOptions, TBuildResult };

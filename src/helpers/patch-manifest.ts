@@ -17,17 +17,15 @@ const patchManifest = async (options: TPatchManifestOptions) => {
   newManifest.sdkVersion = sdkVersion;
   newManifest.version = packageJson.version;
 
-  try {
-    zManifest.parse(newManifest);
-  } catch (error) {
-    console.error("Error validating patched manifest:", error);
-  }
+  const validatedManifest = zManifest.parse(newManifest);
 
   await fs.writeFile(
     manifestPath,
-    JSON.stringify(newManifest, null, 2),
+    JSON.stringify(validatedManifest, null, 2),
     "utf-8",
   );
+
+  return validatedManifest;
 };
 
 export { patchManifest };
