@@ -22,6 +22,7 @@ type TCreateGitHubReleaseOptions = {
 type TUploadReleaseAssetOptions = {
   assetName: string;
   assetPath: string;
+  contentType?: string;
   releaseId: number;
   repository: string;
   token: string;
@@ -135,6 +136,7 @@ const createGitHubRelease = async ({
 const uploadGitHubReleaseAsset = async ({
   assetName,
   assetPath,
+  contentType,
   releaseId,
   repository,
   token,
@@ -149,7 +151,7 @@ const uploadGitHubReleaseAsset = async ({
       data: assetData,
       headers: {
         "content-length": data.byteLength,
-        "content-type": "application/gzip",
+        "content-type": contentType ?? "application/octet-stream",
       },
       name: assetName,
       owner,

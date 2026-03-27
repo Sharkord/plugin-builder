@@ -53,13 +53,14 @@ const publish = async (
     token,
   });
 
-  const assetName = path.basename(buildResult.archivePath);
+  const archiveAssetName = path.basename(buildResult.archivePath);
 
-  console.log(`Uploading release asset ${assetName}...`);
+  console.log(`Uploading release asset ${archiveAssetName}...`);
 
-  const asset = await uploadGitHubReleaseAsset({
-    assetName,
+  const archiveAsset = await uploadGitHubReleaseAsset({
+    assetName: archiveAssetName,
     assetPath: buildResult.archivePath,
+    contentType: "application/x-tar",
     releaseId: release.id,
     repository,
     token,
@@ -67,7 +68,7 @@ const publish = async (
 
   const version = {
     ...buildResult.version,
-    downloadUrl: asset.browser_download_url,
+    downloadUrl: archiveAsset.browser_download_url,
   };
 
   await writePluginVersionFile({
@@ -75,13 +76,26 @@ const publish = async (
     versionPath: buildResult.versionPath,
   });
 
+  const versionAssetName = path.basename(buildResult.versionPath);
+
+  console.log(`Uploading release asset ${versionAssetName}...`);
+
+  await uploadGitHubReleaseAsset({
+    assetName: versionAssetName,
+    assetPath: buildResult.versionPath,
+    contentType: "application/json",
+    releaseId: release.id,
+    repository,
+    token,
+  });
+
   console.log(
-    `Publish complete!\nRelease: ${release.downloadUrl}\nDownload URL: ${asset.browser_download_url}\nVersion file: ${buildResult.versionPath}`,
+    `Publish complete!\nRelease: ${release.downloadUrl}\nDownload URL: ${archiveAsset.browser_download_url}\nVersion file: ${buildResult.versionPath}`,
   );
 
   return {
     ...buildResult,
-    downloadUrl: asset.browser_download_url,
+    downloadUrl: archiveAsset.browser_download_url,
     releaseUrl: release.downloadUrl,
     repository,
     tag,

@@ -41,6 +41,7 @@ const zPluginVersion = z.object({
   checksum: z.string(),
   sdkVersion: z.number(),
   size: z.number(),
+  timestamp: z.number().int().nonnegative(),
 });
 
 type TManifest = z.infer<typeof zManifest>;

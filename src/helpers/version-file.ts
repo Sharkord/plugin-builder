@@ -27,6 +27,7 @@ const createPluginVersion = async ({
   checksum: await sha256(archivePath),
   sdkVersion: manifest.sdkVersion,
   size: (await fs.stat(archivePath)).size,
+  timestamp: Date.now(),
 });
 
 const writePluginVersionFile = async ({
