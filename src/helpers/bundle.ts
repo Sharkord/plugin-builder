@@ -73,6 +73,11 @@ const bundle = async ({ pluginRootDir, outDir }: TBundleOptions) => {
       minify: true,
       format: "esm",
       plugins: [clientGlobals],
+      define: {
+        // forces production JSX transform so it uses jsx/jsxs from react/jsx-runtime
+        // instead of jsxDEV from react/jsx-dev-runtime
+        "process.env.NODE_ENV": '"production"',
+      },
     }),
   ]);
 };
