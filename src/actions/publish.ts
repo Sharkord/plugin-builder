@@ -6,9 +6,11 @@ import {
 } from "../helpers/github-release";
 import { resolveGitHubRepository } from "../helpers/resolve-github-repository";
 import { writePluginVersionFile } from "../helpers/version-file";
+import { openRegistryPr } from "../helpers/registry-pr";
 
 type TPublishOptions = {
   githubToken?: string;
+  pr?: boolean;
   pluginRootDir?: string;
   repo?: string;
   sdkVersion?: number;
@@ -16,6 +18,7 @@ type TPublishOptions = {
 
 type TPublishResult = TBuildResult & {
   downloadUrl: string;
+  prUrl?: string;
   releaseUrl: string;
   repository: string;
   tag: string;
@@ -89,6 +92,20 @@ const publish = async (
     token,
   });
 
+  let prUrl: string | undefined;
+
+  if (options.pr !== false) {
+    console.log("Opening pull request on Sharkord/plugins...");
+
+    prUrl = await openRegistryPr({
+      manifest: buildResult.manifest,
+      token,
+      version,
+    });
+
+    console.log(`Pull request: ${prUrl}`);
+  }
+
   console.log(
     `Publish complete!\nRelease: ${release.downloadUrl}\nDownload URL: ${archiveAsset.browser_download_url}\nVersion file: ${buildResult.versionPath}`,
   );
@@ -96,6 +113,7 @@ const publish = async (
   return {
     ...buildResult,
     downloadUrl: archiveAsset.browser_download_url,
+    prUrl,
     releaseUrl: release.downloadUrl,
     repository,
     tag,

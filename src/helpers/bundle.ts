@@ -56,7 +56,7 @@ const bundle = async ({ pluginRootDir, outDir }: TBundleOptions) => {
     throw new Error(`Client entry point not found at "${clientEntry}"`);
   }
 
-  await Promise.all([
+  const results = await Promise.all([
     Bun.build({
       entrypoints: [serverEntry],
       outdir: `${outDir}/server`,
@@ -80,6 +80,12 @@ const bundle = async ({ pluginRootDir, outDir }: TBundleOptions) => {
       },
     }),
   ]);
+
+  const failed = results.find((result) => !result.success);
+
+  if (failed) {
+    throw new Error(`Bundling failed:\n${failed.logs.join("\n")}`);
+  }
 };
 
 export { bundle };
